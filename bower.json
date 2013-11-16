@@ -1,7 +1,6 @@
 {
-    "name": "CSS Stem UI",
+    "name": "Parallel Eval",
     "devDependencies": {
-        "jquery": "~1.8",
-        "angular": "~1.2"
+        "raphael": "latest"
     }
 }
