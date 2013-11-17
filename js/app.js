@@ -34,7 +34,7 @@ angular.module('ParallelEval', [])
 
             ParallelEval.prototype.reversePolishNotation = function(expr) {
                 /**
-                 * Алгоритм Дейкстры для построения обратной польской нотации.
+                 * Алгоритм Дейкстры для построения обратной польской записи.
                  *
                  * Правила:
                  * Рассматриваем поочередно каждый символ:
@@ -102,7 +102,8 @@ angular.module('ParallelEval', [])
                             }
                         }
                     } else {
-                        sequence.push(parseFloat(item));
+                        sequence.push(item);
+                        // sequence.push(parseFloat(item));
                     }
                 }
 
@@ -141,6 +142,7 @@ angular.module('ParallelEval', [])
                     this.left = null;
                     this.right = null;
                     this.value = item;
+                    this.childrenCount = 0;
                 };
 
                 while(bottom++ < expr.length-1) {
@@ -154,17 +156,81 @@ angular.module('ParallelEval', [])
                     expr.push(item);
                 }
 
+                item = expr[bottom] || null;
                 this.graph = {
-                    root: expr[bottom],
+                    root: item,
                     depth: (function getDepth(node) {
                         // Рекурсивно считаем глубину графа.
                         return node !== null ? 1 + Math.max(getDepth(node.left),
                             getDepth(node.right)) : 0;
-                    })(expr[bottom])
+                    })(item)
                 };
             };
 
-            // ParallelEval.prototype. = function() {};
+            ParallelEval.prototype.drawGraph = function() {
+                var self = this,
+                    size = {
+                        operator: 10,
+                        number: 20,
+                        distance: 40,
+                        font: 18
+                    },
+                    color = {
+                        operator: '#187abf',
+                        number: '#187abf',
+                        path: '#187abf',
+                        text: '#fff'
+                    },
+                    start = {
+                        x: (this.element.height -
+                            this.graph.depth * size.distance) / 2,
+                        y: (this.element.width -
+                            this.graph.depth * size.distance * size.distance)
+                    };
+
+                var drawNode = function(x, y, node) {
+                    var textOffset = parseInt(node.value.length/3*size.font);
+
+                    self.paper.circle(x, y, size[node.type]).attr({
+                        'fill': color[node.type],
+                        'stroke-width': 0
+                    });
+                    self.paper.text(x+((size[node.type]-textOffset) / 2),
+                        y+((size[node.type]-size.font) / 2), node.value).attr({
+                        'fill': color.text,
+                        'font-size': size.font,
+                        'font-weight': 600,
+                        'font-family': 'GostA'
+                    });
+                };
+                // var drawNumber = function(x, y) {};
+
+                if(this.graph && this.graph.root !== null) {
+                    (function draw(node, depth) {
+                        if(node !== null) {
+                            var x, y;
+                            depth--;
+
+                            if(node.left !== null) {
+                                x = start.x - (depth - self.graph.depth)
+                                    * size.distance;
+                                y = start.y - depth * size.distance;
+
+                                drawNode(x, y, node.left)
+                                draw(node.left, depth);
+                            }
+                            if(node.left !== null) {
+                                x = start.x + (depth - self.graph.depth)
+                                    * size.distance;
+                                y = start.y + depth * size.distance;
+
+                                drawNode(x, y, node.right)
+                                draw(node.right, depth);
+                            }
+                        }
+                    })(this.graph.root, this.graph.depth);
+                }
+            };
 
             return ParallelEval;
         })();
