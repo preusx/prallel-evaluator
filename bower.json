@@ -1,6 +1,7 @@
 {
     "name": "Parallel Eval",
     "devDependencies": {
-        "raphael": "latest"
+        "raphael": "latest",
+        "angular": "~1.2"
     }
 }

@@ -1,4 +1,20 @@
-document html
+doctype html
 
-html
-  
+html(ng-app="ParallelEval")
+  meta(charset="utf-8")
+  title Title
+
+  link(rel="stylesheet", href="../css/style.css")
+
+body
+  .wrapper(parallel-eval)
+    .canvas#canvas
+    .controls
+      button.button.controls__item Добавить элемент
+      .delimiter.controls__item
+      .input.controls__item
+        input
+
+  script(src="../bower_components/angular/angular.js")
+  script(src="../bower_components/raphael/raphael.js")
+  script(src="../js/app.js")
