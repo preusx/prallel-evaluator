@@ -80,24 +80,47 @@ body
 
 
 .controls
+.tabledata
     @extends .cf
 
     position absolute
-    top 0
     right 0
     width auto
-    height 43px
-    margin-bottom -43px
     padding 4.5px 5px
     z-index 20
-
-    line-height 35px
 
     canvas(color-main) 
     color #fff
 
+
+.controls
+    top 0
+    height 43px
+
+    line-height 35px
+
     &__item
         float left
+
+
+.tabledata
+    bottom 0
+
+    &__table
+        border 2px solid #fff
+
+        & > thead
+            border-bottom 2px solid #fff
+    
+        & td
+        & th
+            padding 5px 10px
+
+        & th
+            border-right 2px solid #fff
+
+            &:last-child
+                border-right-width 0
 
 
 // ========================================================================

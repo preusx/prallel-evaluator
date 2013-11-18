@@ -9,10 +9,28 @@ html(ng-app="ParallelEval")
 body
   .wrapper(parallel-eval)
     .canvas#canvas
+
     form.controls(ng-submit="controller.redraw($event)")
       .input.controls__item
         input(ng-model="controller.expression")
       button.button.controls__item(type="submit") Перестроить граф
+
+    .tabledata(ng-if="controller.data.length > 0")
+      table.tabledata__table
+        thead
+          tr
+            th Проц-ов(p)
+            th Тактов(T)
+            th Ускорение(S)
+            th Эффективность(E)
+
+        tbody
+          tr(ng-repeat="i in controller.data")
+            th {{i.p}}
+            td {{i.t}}
+            td {{i.s}}
+            td {{i.e}}
+
 
   script(src="../bower_components/angular/angular.js")
   script(src="../bower_components/raphael/raphael.js")
