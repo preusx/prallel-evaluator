@@ -126,7 +126,7 @@ angular.module('ParallelEval', [])
                  */ 
                 var item, sequence = [], symbols = [], symbolsBuf = [];
                 var priority = {
-                    '+': 2, '-': 2, '*': 3, '/': 3, '^': 3, '(': 1, ')': 1
+                    '+': 2, '-': 2, '*': 3, '/': 3, '^': 4, '(': 1, ')': 1
                 };
                 var re = /([0-9.]+|[\+\-\*\^\/\(\)])/;
 
