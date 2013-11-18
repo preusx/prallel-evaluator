@@ -9,9 +9,10 @@ angular.module('ParallelEval', [])
         var Draggable;
 
         return Draggable = (function() {
-            function Draggable(element) {
+            function Draggable(element, parent) {
                 var self = this;
                 this.element = angular.element(element);
+                this.parent = parent;
                 this.handler = {
                     mousedown: function(e){self.mousedown(e);},
                     mousemove: function(e){self.mousemove(e);},
@@ -38,9 +39,19 @@ angular.module('ParallelEval', [])
             };
 
             Draggable.prototype.mousemove = function(e) {
+                var top = this.offset.y + e.y - this.eOffset.y,
+                    left = this.offset.x + e.x - this.eOffset.x,
+                    size = {
+                        x: this.element[0].clientWidth
+                            - this.parent[0].clientWidth,
+                        y: this.element[0].clientHeight
+                            - this.parent[0].clientHeight
+                    };
                 this.element.css({
-                    top: this.offset.y + e.y - this.eOffset.y,
-                    left: this.offset.x + e.x - this.eOffset.x
+                    top: top > 0 ? 0 :
+                        (-1 * top > size.y ? -1 * size.y : top),
+                    left: left > 0 ? 0 :
+                        (-1 * left > size.x ? -1 * size.x : left)
                 });
             };
 
@@ -62,12 +73,11 @@ angular.module('ParallelEval', [])
                 }
 
                 this.element = angular.element(element);
-                this.paper = Raphael(element, 2500, 2500);
-                this.draggable = new Draggable(this.paper.canvas);
-                console.log(this.element);
+                this.paper = Raphael(element, 4500, 2500);
+                this.draggable = new Draggable(this.paper.canvas, this.element);
                 this.draggable.element.css({
                     top: -1 * ((2500 - this.element[0].clientHeight) / 2),
-                    left: -1 * ((2500 - this.element[0].clientWidth) / 2)
+                    left: -1 * ((4500 - this.element[0].clientWidth) / 2)
                 });
             };
 
