@@ -5,13 +5,24 @@ function factor(a) {
 }
 
 angular.module('ParallelEval', [])
-    .factory('Draggable', function() {
+    .factory('Draggable', function($document) {
         var Draggable;
 
         return Draggable = (function() {
-            function Draggable(element) {};
+            function Draggable(element) {
+                this.element = angular.element(element);
 
-            // Draggable.prototype. = function() {};
+                this.element.on('mousedown', function(e){this.mousedown(e);});
+            };
+
+            Draggable.prototype.mousedown = function(e) {
+                $document.on('mousemove', function(e){this.mousemove(e);});
+                $document.on('mouseup', function(e){this.mouseup(e);});
+            };
+
+            Draggable.prototype.mousemove = function() {};
+            
+            Draggable.prototype.mouseup = function() {};
         })();
     })
     .factory('ParallelEval', function() {
@@ -30,10 +41,11 @@ angular.module('ParallelEval', [])
             ParallelEval.prototype.redraw = function(expr) {
                 this.expr = expr ? this.reversePolishNotation(expr) : this.expr;
 
-                this.buildGraph();
-                console.log(this.expr);
-                this.paper.clear();
-                this.drawGraph();
+                try {
+                    this.buildGraph();
+                    this.paper.clear();
+                    this.drawGraph();
+                } catch(e) {};
             };
 
             ParallelEval.prototype.reversePolishNotation = function(expr) {
@@ -207,8 +219,6 @@ angular.module('ParallelEval', [])
                             (this.graph.depth * size.distance)
                     };
 
-                console.log(this.paper);
-
                 var drawNode = function(x, y, node) {
                     var textOffset = parseInt(node.value.length/3*size.font);
 
@@ -268,8 +278,17 @@ angular.module('ParallelEval', [])
         })();
     })
     .controller('ParallelEvalCtrl', function($scope, ParallelEval) {
-        this.parallelEval = new ParallelEval('canvas');
-        $scope.controller = this;
+        self = this;
+        self.parallelEval = new ParallelEval('canvas');
+        self.redraw = function(e) {
+            if(e) {
+                e.preventDefault();
+            }
+
+            self.parallelEval.redraw(self.expression);
+        };
+        self.expression = "";
+        $scope.controller = self;
     })
     .directive('parallelEval', function() {
         var directiveObject;
@@ -278,11 +297,8 @@ angular.module('ParallelEval', [])
             restrict: 'A',
             controller: 'ParallelEvalCtrl',
             link: function($scope) {
-                var expr;
-                expr = "(110*20+40)+(45+34)*5+18/3*25";
-                expr = "110*20+40*5+34*5+18/3*25+4*7+65*6/9";
-                console.log(expr);
-                $scope.controller.parallelEval.redraw(expr);
+                $scope.controller.expression = "(110*20+40)+(45+34)*5+18/3*25";
+                $scope.controller.redraw();
             }
         };
     });

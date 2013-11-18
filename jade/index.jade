@@ -9,11 +9,10 @@ html(ng-app="ParallelEval")
 body
   .wrapper(parallel-eval)
     .canvas#canvas
-    .controls
-      button.button.controls__item Добавить элемент
-      .delimiter.controls__item
+    form.controls(ng-submit="controller.redraw($event)")
       .input.controls__item
-        input
+        input(ng-model="controller.expression")
+      button.button.controls__item(type="submit") Перестроить граф
 
   script(src="../bower_components/angular/angular.js")
   script(src="../bower_components/raphael/raphael.js")
