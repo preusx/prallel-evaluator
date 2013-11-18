@@ -10,22 +10,49 @@ angular.module('ParallelEval', [])
 
         return Draggable = (function() {
             function Draggable(element) {
+                var self = this;
                 this.element = angular.element(element);
+                this.handler = {
+                    mousedown: function(e){self.mousedown(e);},
+                    mousemove: function(e){self.mousemove(e);},
+                    mouseup: function(e){self.mouseup(e);}
+                };
 
-                this.element.on('mousedown', function(e){this.mousedown(e);});
+                this.element.on('mousedown', this.handler.mousedown);
             };
 
             Draggable.prototype.mousedown = function(e) {
-                $document.on('mousemove', function(e){this.mousemove(e);});
-                $document.on('mouseup', function(e){this.mouseup(e);});
+                var self = this;
+                this.eOffset = {
+                    x: e.x,
+                    y: e.y
+                };
+
+                this.offset = {
+                    x: parseInt(this.element.css('left') || 0),
+                    y: parseInt(this.element.css('top') || 0)
+                };
+
+                $document.on('mousemove', this.handler.mousemove)
+                    .on('mouseup', this.handler.mouseup);
             };
 
-            Draggable.prototype.mousemove = function() {};
-            
-            Draggable.prototype.mouseup = function() {};
+            Draggable.prototype.mousemove = function(e) {
+                this.element.css({
+                    top: this.offset.y + e.y - this.eOffset.y,
+                    left: this.offset.x + e.x - this.eOffset.x
+                });
+            };
+
+            Draggable.prototype.mouseup = function(e) {
+                $document.off('mousemove', this.handler.mousemove)
+                    .off('mouseup', this.handler.mouseup);
+            };
+
+            return Draggable;
         })();
     })
-    .factory('ParallelEval', function() {
+    .factory('ParallelEval', function(Draggable) {
         var ParallelEval;
 
         return ParallelEval = (function() {
@@ -35,7 +62,13 @@ angular.module('ParallelEval', [])
                 }
 
                 this.element = angular.element(element);
-                this.paper = Raphael(element);
+                this.paper = Raphael(element, 2500, 2500);
+                this.draggable = new Draggable(this.paper.canvas);
+                console.log(this.element);
+                this.draggable.element.css({
+                    top: -1 * ((2500 - this.element[0].clientHeight) / 2),
+                    left: -1 * ((2500 - this.element[0].clientWidth) / 2)
+                });
             };
 
             ParallelEval.prototype.redraw = function(expr) {
