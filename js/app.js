@@ -1,9 +1,5 @@
 'use strict';
 
-function factor(a) {
-    return a > 0 ? a + factor(a-1) : 1;
-}
-
 angular.module('ParallelEval', [])
     .factory('Draggable', function($document) {
         var Draggable;
@@ -253,7 +249,7 @@ angular.module('ParallelEval', [])
                     color = {
                         operator: '#187abf',
                         number: '#187abf',
-                        path: '#187abf',
+                        path: '#fff',
                         text: '#fff'
                     },
                     start = {
@@ -277,7 +273,14 @@ angular.module('ParallelEval', [])
                         'font-family': 'GostA'
                     });
                 };
-                // var drawNumber = function(x, y) {};
+                var drawPath = function(fx, fy, x, y) {
+                    self.paper.path("M"+fx.toString()+" "
+                        +fy.toString()+" L"+x.toString()
+                        +" "+y.toString()).attr({
+                            'stroke': color.path,
+                            'stroke-width': 2
+                        }).toBack();
+                };
 
                 drawNode(start.x, start.y, this.graph.root);
 
@@ -291,25 +294,15 @@ angular.module('ParallelEval', [])
                                     * size.distance);
 
                                 drawNode(x, y, node.left);
-                                self.paper.path("M"+pos.x.toString()+" "
-                                    +pos.y.toString()+" L"+x.toString()
-                                    +" "+y.toString()).attr({
-                                        'stroke': '#fff',
-                                        'stroke-width': 2
-                                    }).toBack();
+                                drawPath(pos.x, pos.y, x, y);
                                 draw(node.left, {x:x, y:y});
                             }
-                            if(node.left !== null) {
+                            if(node.right !== null) {
                                 x = pos.x + (Math.pow(2, node.children.left)
                                     * size.distance);
 
                                 drawNode(x, y, node.right);
-                                self.paper.path("M"+pos.x.toString()+" "
-                                    +pos.y.toString()+" L"+x.toString()
-                                    +" "+y.toString()).attr({
-                                        'stroke': '#fff',
-                                        'stroke-width': 2
-                                    }).toBack();
+                                drawPath(pos.x, pos.y, x, y);
                                 draw(node.right, {x:x, y:y});
                             }
                         }
