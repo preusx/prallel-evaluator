@@ -1,5 +1,9 @@
 'use strict';
 
+function factor(a) {
+    return a > 0 ? a + factor(a-1) : 1;
+}
+
 angular.module('ParallelEval', [])
     .factory('Draggable', function() {
         var Draggable;
@@ -20,14 +24,14 @@ angular.module('ParallelEval', [])
                 }
 
                 this.element = angular.element(element);
-                this.paper = Raphael(element, this.element.width,
-                    this.element.height);
+                this.paper = Raphael(element);
             };
 
             ParallelEval.prototype.redraw = function(expr) {
                 this.expr = expr ? this.reversePolishNotation(expr) : this.expr;
 
                 this.buildGraph();
+                console.log(this.expr);
                 this.paper.clear();
                 this.drawGraph();
             };
@@ -77,8 +81,6 @@ angular.module('ParallelEval', [])
                     item = expr.match(re)[0];
                     expr = expr.replace(re, '');
 
-                    console.log(item, expr, priority[item]);
-
                     if(priority[item] > 0) {
                         if(['(', ')'].indexOf(item) >= 0) {
                             if(item === ')') {
@@ -86,20 +88,23 @@ angular.module('ParallelEval', [])
                                     && symbols.length > 0) {
                                     sequence.push(item);
                                 }
+                                // while(symbolsBuf.length > 0) {
+                                //     sequence.push(symbolsBuf.pop());
+                                // }
                             } else {
                                 symbols.push(item);
                             }
                         } else {
                             while(priority[symbols[symbols.length-1]]
-                                > priority[item] && symbols.length > 0) {
-                                symbolsBuf.push(symbols.pop());
+                                >= priority[item] && symbols.length > 0) {
+                                sequence.push(symbols.pop());
                             }
-
+;
                             symbols.push(item);
 
-                            while(symbolsBuf.length > 0) {
-                                symbols.push(symbolsBuf.pop());
-                            }
+                            // while(symbolsBuf.length > 0) {
+                            //     symbols.push(symbolsBuf.pop());
+                            // }
                         }
                     } else {
                         sequence.push(item);
@@ -142,11 +147,18 @@ angular.module('ParallelEval', [])
                     this.left = null;
                     this.right = null;
                     this.value = item;
-                    this.childrenCount = 0;
+                    this.children = {
+                        left: 0,
+                        right: 0
+                    }
                 };
 
-                while(bottom++ < expr.length-1) {
-                    item = new Node(expr[bottom]);
+                while(++bottom < expr.length-1) {
+                    if(typeof expr[bottom] === 'string') {
+                        item = new Node(expr[bottom]);
+                    } else {
+                        item = expr[bottom];
+                    }
 
                     if(isOperator(expr[bottom])) {
                         item.left = expr.pop();
@@ -161,8 +173,16 @@ angular.module('ParallelEval', [])
                     root: item,
                     depth: (function getDepth(node) {
                         // Рекурсивно считаем глубину графа.
-                        return node !== null ? 1 + Math.max(getDepth(node.left),
-                            getDepth(node.right)) : 0;
+
+                        if(node !== null) {
+                            node.children.left = getDepth(node.left);
+                            node.children.right = getDepth(node.right);
+
+                            return 1 + Math.max(node.children.left,
+                                node.children.right)
+                        }
+
+                        return 0;
                     })(item)
                 };
             };
@@ -170,9 +190,9 @@ angular.module('ParallelEval', [])
             ParallelEval.prototype.drawGraph = function() {
                 var self = this,
                     size = {
-                        operator: 10,
+                        operator: 14,
                         number: 20,
-                        distance: 40,
+                        distance: 12,
                         font: 18
                     },
                     color = {
@@ -182,11 +202,12 @@ angular.module('ParallelEval', [])
                         text: '#fff'
                     },
                     start = {
-                        x: (this.element.height -
-                            this.graph.depth * size.distance) / 2,
-                        y: (this.element.width -
-                            this.graph.depth * size.distance * size.distance)
+                        x: this.paper.width / 2,
+                        y: this.paper.height / 2 +
+                            (this.graph.depth * size.distance)
                     };
+
+                console.log(this.paper);
 
                 var drawNode = function(x, y, node) {
                     var textOffset = parseInt(node.value.length/3*size.font);
@@ -195,8 +216,8 @@ angular.module('ParallelEval', [])
                         'fill': color[node.type],
                         'stroke-width': 0
                     });
-                    self.paper.text(x+((size[node.type]-textOffset) / 2),
-                        y+((size[node.type]-size.font) / 2), node.value).attr({
+                    self.paper.text(x+((size[node.type]-textOffset) / 7),
+                        y+((size[node.type]-size.font) / 7), node.value).attr({
                         'fill': color.text,
                         'font-size': size.font,
                         'font-weight': 600,
@@ -205,30 +226,41 @@ angular.module('ParallelEval', [])
                 };
                 // var drawNumber = function(x, y) {};
 
+                drawNode(start.x, start.y, this.graph.root);
+
                 if(this.graph && this.graph.root !== null) {
-                    (function draw(node, depth) {
+                    (function draw(node, pos) {
                         if(node !== null) {
-                            var x, y;
-                            depth--;
+                            var x, y = pos.y - size.distance * 4;
 
                             if(node.left !== null) {
-                                x = start.x - (depth - self.graph.depth)
-                                    * size.distance;
-                                y = start.y - depth * size.distance;
+                                x = pos.x - (Math.pow(2, node.children.right)
+                                    * size.distance);
 
-                                drawNode(x, y, node.left)
-                                draw(node.left, depth);
+                                drawNode(x, y, node.left);
+                                self.paper.path("M"+pos.x.toString()+" "
+                                    +pos.y.toString()+" L"+x.toString()
+                                    +" "+y.toString()).attr({
+                                        'stroke': '#fff',
+                                        'stroke-width': 2
+                                    }).toBack();
+                                draw(node.left, {x:x, y:y});
                             }
                             if(node.left !== null) {
-                                x = start.x + (depth - self.graph.depth)
-                                    * size.distance;
-                                y = start.y + depth * size.distance;
+                                x = pos.x + (Math.pow(2, node.children.left)
+                                    * size.distance);
 
-                                drawNode(x, y, node.right)
-                                draw(node.right, depth);
+                                drawNode(x, y, node.right);
+                                self.paper.path("M"+pos.x.toString()+" "
+                                    +pos.y.toString()+" L"+x.toString()
+                                    +" "+y.toString()).attr({
+                                        'stroke': '#fff',
+                                        'stroke-width': 2
+                                    }).toBack();
+                                draw(node.right, {x:x, y:y});
                             }
                         }
-                    })(this.graph.root, this.graph.depth);
+                    })(this.graph.root, start);
                 }
             };
 
@@ -237,12 +269,20 @@ angular.module('ParallelEval', [])
     })
     .controller('ParallelEvalCtrl', function($scope, ParallelEval) {
         this.parallelEval = new ParallelEval('canvas');
+        $scope.controller = this;
     })
     .directive('parallelEval', function() {
         var directiveObject;
 
         return directiveObject = {
             restrict: 'A',
-            controller: 'ParallelEvalCtrl'
+            controller: 'ParallelEvalCtrl',
+            link: function($scope) {
+                var expr;
+                expr = "(110*20+40)+(45+34)*5+18/3*25";
+                expr = "110*20+40*5+34*5+18/3*25+4*7+65*6/9";
+                console.log(expr);
+                $scope.controller.parallelEval.redraw(expr);
+            }
         };
     });
