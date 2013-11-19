@@ -77,7 +77,7 @@ angular.module('ParallelEval', [])
                 });
 
                 this.graph = {};
-                this.mainframes = [1, 1000000];
+                this.mainframes = [1000000, 2, 3, 4];
                 this.data = {};
             };
 
@@ -143,9 +143,6 @@ angular.module('ParallelEval', [])
                                     && symbols.length > 0) {
                                     sequence.push(item);
                                 }
-                                // while(symbolsBuf.length > 0) {
-                                //     sequence.push(symbolsBuf.pop());
-                                // }
                             } else {
                                 symbols.push(item);
                             }
@@ -156,14 +153,9 @@ angular.module('ParallelEval', [])
                             }
 ;
                             symbols.push(item);
-
-                            // while(symbolsBuf.length > 0) {
-                            //     symbols.push(symbolsBuf.pop());
-                            // }
                         }
                     } else {
                         sequence.push(item);
-                        // sequence.push(parseFloat(item));
                     }
                 }
 
@@ -227,10 +219,11 @@ angular.module('ParallelEval', [])
 
                 item = expr[bottom] || null;
                 this.graph.root = item;
-                this.graph.depth = (function getDepth(node) {
+                this.graph.depth = (function getDepth(node, depth) {
                     // Рекурсивно считаем глубину графа.
 
                     if(node !== null) {
+                        node.depth = ++depth;
                         node.children.left = getDepth(node.left);
                         node.children.right = getDepth(node.right);
 
@@ -239,7 +232,7 @@ angular.module('ParallelEval', [])
                     }
 
                     return 0;
-                })(item);
+                })(item, 0);
             };
 
             ParallelEval.prototype.drawGraph = function() {
@@ -324,10 +317,10 @@ angular.module('ParallelEval', [])
                  *   T - количество тактов.
                  */
 
-                var item, nodes = [], bottom = -1, i;
+                var item, nodes = [], bottom = -1, i, t = 0;
 
                 nodes.push(this.graph.root);
-                while(++bottom < nodes.length - 1) {
+                while(++bottom < nodes.length) {
                     item = nodes[bottom];
 
                     if(item.left.type === 'operator') {
@@ -336,21 +329,38 @@ angular.module('ParallelEval', [])
                     if(item.right.type === 'operator') {
                         nodes.push(item.right);
                     }
+
+                    t += item.type === 'operator';
                 }
 
-                this.nodes = nodes.reverse();
+                this.data[1] = {
+                    p: 1,
+                    t: t,
+                    s: 1,
+                    e: 1
+                };
 
-                for(i = 0; i < this.mainframes; i++) {
-                    this.calculateMainframeData(this.mainframes[i]);
+                this.nodes = nodes;
+
+                for(i = 0; i < this.mainframes.length; i++) {
+                    var p = this.mainframes[i];
+                    this.data[p] = {
+                        p: p,
+                        t: this.calculateMainframeTicks(p)
+                    };
+
+                    this.data[p].s = this.data[1].t / this.data[p].t;
+                    this.data[p].e = this.data[p].s / p;
                 }
             };
 
-            ParallelEval.prototype.calculateMainframeData =
+            ParallelEval.prototype.calculateMainframeTicks =
                 function(processorsCount) {
-                var ticks = 0, count = 0, item;
+                var count = 0, item;
                 var nodes = (function(a) {
                     var nodes = [];
                     for(var i = 0; i < a.length; i++) {
+                        a[i].ready = 0;
                         nodes.push(a[i]);
                     }
                     return nodes;
@@ -358,19 +368,17 @@ angular.module('ParallelEval', [])
 
                 while(nodes.length > 0) {
                     item = nodes.shift();
-                    item.ready = (item.left.ready===2)+(item.left.ready===2);
+                    item.ready = (item.left.ready===2)+(item.right.ready===2);
 
-                    if(item.ready === 2) {
-                        count++;
-
-                        if(count > processorsCount) {
-                            ticks++;
-                            count = 0;
-                        }
-                    } else {
+                    if(item.ready !== 2){
                         nodes.push(item);
+                        // count += processorsCount;
+                    } else {
+                        count++;
                     }
                 }
+
+                return parseInt(count / processorsCount);
             };
 
             return ParallelEval;
@@ -379,13 +387,16 @@ angular.module('ParallelEval', [])
     .controller('ParallelEvalCtrl', function($scope, ParallelEval) {
         self = this;
         self.parallelEval = new ParallelEval('canvas');
-        self.redraw = function(e) {
+        self.rebuild = function(e) {
             if(e) {
                 e.preventDefault();
             }
 
             self.parallelEval.redraw(self.expression);
+            self.parallelEval.calculateData();
+            self.data = self.parallelEval.data;
         };
+        self.data = [];
         self.expression = "";
         $scope.controller = self;
     })
@@ -398,7 +409,7 @@ angular.module('ParallelEval', [])
             link: function($scope) {
                 $scope.controller.expression =
                     "(110*20+(40-8.5))+(45+34)*(5+10)+18/3*(25*3)";
-                $scope.controller.redraw();
+                $scope.controller.rebuild();
             }
         };
     });

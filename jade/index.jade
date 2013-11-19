@@ -10,12 +10,12 @@ body
   .wrapper(parallel-eval)
     .canvas#canvas
 
-    form.controls(ng-submit="controller.redraw($event)")
+    form.controls(ng-submit="controller.rebuild($event)")
       .input.controls__item
         input(ng-model="controller.expression")
       button.button.controls__item(type="submit") Перестроить граф
 
-    .tabledata(ng-if="controller.data.length > 0")
+    .tabledata
       table.tabledata__table
         thead
           tr
