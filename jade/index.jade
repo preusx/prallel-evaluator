@@ -25,11 +25,19 @@ body
             th Эффективность(E)
 
         tbody
-          tr(ng-repeat="i in controller.data")
+          tr(ng-repeat="i in controller.data.mainframes")
             th {{i.p}}
             td {{i.t}}
             td {{i.s}}
             td {{i.e}}
+
+          tr._delimiter
+            th Лучший
+            td._align-right(colspan=3) {{controller.data.best}}
+
+          tr._delimiter
+            th Результат
+            td._align-right(colspan=3) {{controller.data.result}}
 
 
   script(src="../bower_components/angular/angular.js")
