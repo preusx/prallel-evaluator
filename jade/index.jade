@@ -12,7 +12,7 @@ body
 
     form.controls(ng-submit="controller.rebuild($event)")
       .input.controls__item
-        input(ng-model="controller.expression")
+        input(ng-model="controller.expression", size="60")
       button.button.controls__item(type="submit") Перестроить граф
 
     .tabledata

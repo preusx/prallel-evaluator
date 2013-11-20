@@ -194,6 +194,7 @@ angular.module('ParallelEval', [])
                     this.left = null;
                     this.right = null;
                     this.value = item;
+                    this.result = item;
                     this.children = {
                         left: 0,
                         right: 0
@@ -213,8 +214,12 @@ angular.module('ParallelEval', [])
                     }
 
                     if(isOperator(expr[bottom])) {
-                        item.left = expr.pop();
                         item.right = expr.pop();
+                        item.left = expr.pop();
+                        item.result = eval(item.left.result
+                            +expr[bottom]+item.right.result);
+
+                        this.result = item.result;
                     }
 
                     expr.push(item);
@@ -320,7 +325,7 @@ angular.module('ParallelEval', [])
                  *   T - количество тактов.
                  */
 
-                var item, nodes = [], bottom = -1, i, t = 0;
+                var item, nodes = [], bottom = -1, i, t = 0, best = 1;
 
                 nodes.push(this.graph.root);
                 while(++bottom < nodes.length) {
@@ -339,8 +344,8 @@ angular.module('ParallelEval', [])
                 this.data[1] = {
                     p: 1,
                     t: t,
-                    s: 1,
-                    e: 1
+                    s: 0,
+                    e: 0
                 };
 
                 this.nodes = nodes.reverse();
@@ -354,7 +359,13 @@ angular.module('ParallelEval', [])
 
                     this.data[p].s = this.data[1].t / this.data[p].t;
                     this.data[p].e = this.data[p].s / p;
+
+                    if(this.data[p].e > this.data[best].e) {
+                        best = p;
+                    }
                 }
+
+                this.best = best;
             };
 
             ParallelEval.prototype.calculateMainframeTicks =
